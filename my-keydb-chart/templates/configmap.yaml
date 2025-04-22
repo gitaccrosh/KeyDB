@@ -1,0 +1,34 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "keydb-multimaster.fullname" . }}-config
+
+data:
+  keydb.conf: |
+    bind 0.0.0.0
+    port 6379
+    multi-master yes
+    active-replica yes
+    maxclients 10000
+    tcp-backlog 511
+    timeout 0
+    tcp-keepalive 60
+    databases 16
+    save ""  # Disable RDB persistence for speed, use AOF if needed.
+    appendonly yes
+    appendfsync everysec
+    auto-aof-rewrite-percentage 100
+    auto-aof-rewrite-min-size 64mb
+    repl-backlog-size 256mb
+    repl-backlog-ttl 3600
+    client-output-buffer-limit normal 0 0 0
+    client-output-buffer-limit replica 512mb 256mb 60
+    client-output-buffer-limit pubsub 128mb 32mb 60
+    hz 100
+    dynamic-hz yes
+    latency-monitor-threshold 0
+    requirepass {{ .Values.auth.password }}
+    masterauth {{ .Values.auth.password }}
+    {{- range $i := until .Values.replicaCount }}
+    replicaof keydb-multimaster-{{ $i }}.keydb-multimaster-headless.default.svc.cluster.local 6379
+    {{- end }}

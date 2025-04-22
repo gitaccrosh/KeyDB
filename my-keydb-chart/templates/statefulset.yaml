@@ -1,0 +1,43 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ include "keydb-multimaster.fullname" . }}
+spec:
+  serviceName: {{ include "keydb-multimaster.fullname" . }}-headless
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ include "keydb-multimaster.name" . }}
+  template:
+    metadata:
+      labels:
+        app: {{ include "keydb-multimaster.name" . }}
+    spec:
+      containers:
+        - name: keydb
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          args: ["/etc/keydb/keydb.conf"]
+          ports:
+            - containerPort: 6379
+          volumeMounts:
+            - name: config
+              mountPath: /etc/keydb
+            - name: data
+              mountPath: /data
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+      volumes:
+        - name: config
+          configMap:
+            name: {{ include "keydb-multimaster.fullname" . }}-config
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: {{ .Values.persistence.size }}
+        {{- if .Values.persistence.storageClass }}
+        storageClassName: {{ .Values.persistence.storageClass }}
+        {{- end }}

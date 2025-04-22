@@ -1,0 +1,22 @@
+replicaCount: 3
+
+image:
+  repository: eqalpha/keydb
+  tag: latest
+  pullPolicy: IfNotPresent
+
+auth:
+  password: "SuperSecretPassword"
+
+persistence:
+  enabled: true
+  size: 8Gi
+  storageClass: ""
+
+resources:
+  limits:
+    cpu: 1
+    memory: 2Gi
+  requests:
+    cpu: 500m
+    memory: 1Gi
