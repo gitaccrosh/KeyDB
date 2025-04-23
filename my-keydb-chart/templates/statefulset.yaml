@@ -1,3 +1,16 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "keydb-multimaster.fullname" . }}
+spec:
+  selector:
+    app: {{ include "keydb-multimaster.name" . }}
+  ports:
+    - name: redis
+      port: 6379
+      targetPort: 6379
+  type: ClusterIP
+ec2-user@[astrokure-eks-dev::keydb-uat][~/custom-keydb/KeyDB/my-keydb-chart/templates]> cat statefulset.yaml 
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
