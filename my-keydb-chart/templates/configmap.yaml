@@ -29,6 +29,3 @@ data:
     latency-monitor-threshold 0
     requirepass {{ .Values.auth.password }}
     masterauth {{ .Values.auth.password }}
-    {{- range $i := until .Values.replicaCount }}
-    replicaof keydb-multimaster-{{ $i }}.keydb-multimaster-headless.default.svc.cluster.local 6379
-    {{- end }}
