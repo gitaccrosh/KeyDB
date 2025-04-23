@@ -1,12 +1,13 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: {{ include "keydb-mesh.fullname" . }}-config
+  name: {{ include "multiactive.fullname" . }}-config
 data:
   keydb.conf.template: |
     bind 0.0.0.0
     port 6379
     requirepass {{ .Values.keydb.requirepass }}
+    masterauth {{ .Values.keydb.requirepass }}
     multi-master yes
     active-replica yes
     protected-mode yes

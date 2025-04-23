@@ -1,18 +1,18 @@
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: {{ include "keydb-multimaster.fullname" . }}
+  name: {{ include "multiactive.fullname" . }}
 spec:
   replicas: {{ .Values.replicaCount }}
   selector:
     matchLabels:
-      app.kubernetes.io/name: {{ include "keydb-multimaster.name" . }}
+      app.kubernetes.io/name: {{ include "multiactive.name" . }}
       app.kubernetes.io/instance: {{ .Release.Name }}
-  serviceName: {{ include "keydb-multimaster.fullname" . }}-headless
+  serviceName: {{ include "multiactive.fullname" . }}-headless
   template:
     metadata:
       labels:
-        app.kubernetes.io/name: {{ include "keydb-multimaster.name" . }}
+        app.kubernetes.io/name: {{ include "multiactive.name" . }}
         app.kubernetes.io/instance: {{ .Release.Name }}
     spec:
       containers:
@@ -31,30 +31,10 @@ spec:
                   key: password
           volumeMounts:
             - name: config
-              mountPath: /etc/keydb/
+              mountPath: /etc/keydb/keydb.conf
               subPath: keydb.conf
             - name: data
               mountPath: /data
-          livenessProbe:
-            exec:
-              command:
-                - sh
-                - -c
-                - "keydb-cli -a {{ .Values.keydb.requirepass }} -p 6379 ping | grep PONG"
-            initialDelaySeconds: 20
-            periodSeconds: 10
-            timeoutSeconds: 5
-            failureThreshold: 3
-          readinessProbe:
-            exec:
-              command:
-                - sh
-                - -c
-                - "keydb-cli -a {{ .Values.keydb.requirepass }} -p 6379 info replication | grep -q 'master_repl_offset:[1-9]'"
-            initialDelaySeconds: 20
-            periodSeconds: 10
-            timeoutSeconds: 5
-            failureThreshold: 3
       initContainers:
         - name: config-init
           image: busybox
@@ -63,10 +43,10 @@ spec:
             - -c
             - |
               index=$(echo $POD_NAME | awk -F'-' '{print $NF}')
-              cp /config/keydb.conf.template /config/keydb.conf
+              cp /template/keydb.conf.template /config/keydb.conf
               for i in $(seq 0 $((REPLICA_COUNT - 1))); do
                 if [ "$i" != "$index" ]; then
-                  echo "replicaof {{ .Release.Name }}-$i.{{ .Release.Name }}-headless.{{ .Release.Namespace }}.svc.cluster.local 6379" >> /config/keydb.conf
+                  echo "replicaof {{ include "multiactive.fullname" . }}-$i.{{ include "multiactive.fullname" . }}-headless.{{ .Release.Namespace }}.svc.cluster.local 6379" >> /config/keydb.conf
                 fi
               done
           env:
@@ -76,12 +56,22 @@ spec:
                   fieldPath: metadata.name
             - name: REPLICA_COUNT
               value: "{{ .Values.replicaCount }}"
+            - name: KEYDB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: keydb-auth
+                  key: password
           volumeMounts:
             - name: config
               mountPath: /config
+            - name: config-template
+              mountPath: /template   
       volumes:
         - name: config
           emptyDir: {}
+        - name: config-template
+          configMap:
+            name: {{ include "multiactive.fullname" . }}-config    
   volumeClaimTemplates:
     - metadata:
         name: data
@@ -89,5 +79,4 @@ spec:
         accessModes: ["ReadWriteOnce"]
         resources:
           requests:
-            storage: 1Gi
-
+            storage: 6Gi
