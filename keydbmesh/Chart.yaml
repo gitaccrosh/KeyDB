@@ -1,0 +1,4 @@
+apiVersion: v2
+name: keydb-multimaster
+version: 0.1.0
+description: A fully dynamic multi-master KeyDB Helm chart
