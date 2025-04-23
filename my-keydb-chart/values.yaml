@@ -6,7 +6,7 @@ image:
   pullPolicy: IfNotPresent
 
 auth:
-  password: "SuperSecretPassword"
+  password: "SSP@ssw0rD"
 
 persistence:
   enabled: true
